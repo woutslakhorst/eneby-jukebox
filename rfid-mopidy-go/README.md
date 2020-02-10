@@ -72,3 +72,15 @@ Also had to give iTerm access to log keys...
 For linux, I'll need to add the device to som udev list.... have to look it up
 
 For some reason I have to write back 3 bytes to the HID device to *reset* the device, otherwise it'll return different codes for the Mac
+
+## Cross compile
+
+didn't work
+
+ended up installing go on the raspberry and:
+
+```
+go get github.com/woutslakhorst/eneby-jukebox/rfid-mopidy-go
+```
+
+as a service via https://www.dexterindustries.com/howto/run-a-program-on-your-raspberry-pi-at-startup/

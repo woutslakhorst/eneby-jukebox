@@ -1,0 +1,10 @@
+[Unit]
+Description=RFID to Mopidy service
+After=multi-user.target
+
+[Service]
+Type=idle
+ExecStart=/home/pi/go/bin/rfid-mopidy-go > /dev/null 2>&1
+
+[Install]
+WantedBy=multi-user.target

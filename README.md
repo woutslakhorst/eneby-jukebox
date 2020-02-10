@@ -13,3 +13,5 @@ Then I came across the Eneby speaker from Ikea, costing just euro 50 and deliver
 ## Contents
 
 - rfid-mopidy-go: Go code for listening to the rfid reader and talking to the Mopidy API.
+- 50-usb-rfid-reader.rules: rules file for raspberry in /etc/udev/rules.d/
+  
