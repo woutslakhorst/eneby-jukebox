@@ -35,7 +35,7 @@ func monitorPin5() error {
 		pin.Detect(rpio.NoEdge)
 
 		// halt
-		cmd := exec.Command("halt")
+		cmd := exec.Command("shutdown")
 		log.Print("Stopping")
 		if err := cmd.Run(); err != nil {
 			log.Printf("failed to issue halt command: %s", err.Error())
