@@ -63,8 +63,7 @@ func main() {
 	mappings := Mappings{}
 
 	if err := yaml.Unmarshal(data, &mappings); err != nil {
-		fmt.Printf("error reading %s: %s\n" ,fn, err.Error())
-		os.Exit(1)
+		log.Fatalf("error reading %s: %s\n" ,fn, err.Error())
 	}
 
 	for k, v := range mappings.Mappings {
@@ -78,6 +77,11 @@ func main() {
 
 	// register interrupt
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
+	// register halt command
+	if err := monitorPin5(); err != nil {
+		log.Fatalf("error starting pin monitoring: %s", err.Error())
+	}
 
 	// mopidy client
 	mopidyClient := MopidyClient{

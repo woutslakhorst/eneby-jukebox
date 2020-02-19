@@ -14,4 +14,21 @@ Then I came across the Eneby speaker from Ikea, costing just euro 50 and deliver
 
 - rfid-mopidy-go: Go code for listening to the rfid reader and talking to the Mopidy API.
 - 50-usb-rfid-reader.rules: rules file for raspberry in /etc/udev/rules.d/
-  
+
+## Status led
+
+Enable serial port by editing /boot/config.txt
+
+```
+enable_uart=1
+```
+
+Connect pin 8 (TXD) and pin 9 (Ground) (https://pinout.xyz/) to a led.
+
+I used a green led, therefore 180Ω has to be used. (calculate yours with: https://www.ledtuning.nl/nl/resistor-calculator)  
+
+## On/Off button
+
+shorting pin 5 and 6 will power-up the pi from hibernation. The trick to to put the pi in hibernation (halt command) by using the same pins
+
+It's now built into the rfid-mopidy-go executable using https://github.com/stianeikeland/go-rpio
