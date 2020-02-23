@@ -36,7 +36,7 @@ func monitorPin5() error {
 		pin.PullDown()
 
 		// halt
-		cmd := exec.Command("shutdown", "now")
+		cmd := exec.Command("halt")
 		log.Print("Stopping")
 		if err := cmd.Run(); err != nil {
 			log.Printf("failed to issue halt command: %s", err.Error())

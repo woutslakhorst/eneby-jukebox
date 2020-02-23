@@ -41,3 +41,7 @@ dtoverlay=gpio-shutdown,gpio_pin=3
 ```
 
 and disabling i2c via rasp-config
+
+## Some UX
+
+The status led comes on quite early, playing a sound when services have started could help...
