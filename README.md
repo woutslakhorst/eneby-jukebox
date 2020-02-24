@@ -51,3 +51,68 @@ and disabling i2c via rasp-config
 ## Some UX
 
 The status led comes on quite early, playing a sound when services have started could help...
+
+## Startup / shutdown sounds
+
+```
+sudo apt-get install ffmpeg
+```
+
+Added the following script to `/etc/init.d`, called it `pacman_sounds`:
+
+```
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides:          pacman_sounds
+# Required-Start:    alsa_utils pulseaudio
+# Required-Stop:     
+# Should-Start:      $named
+# Should-Stop:       $named
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Sounds for startup/shutdown
+### END INIT INFO
+
+NAME=pacman_sounds
+SCRIPTNAME=/etc/init.d/$NAME
+
+do_start()
+{
+    aplay /home/pi/pacman_beginning.wav 2>&1 >/dev/null &
+}
+
+do_stop()
+{
+    aplay /home/pi/pacman_death.wav 2>&1 >/dev/null &
+}
+
+# Remove the action from $@ before it is used by the run action
+action=$1
+[ "$action" != "" ] && shift
+
+case "$action" in
+    start)
+        do_start
+        ;;
+    stop)
+        do_stop
+        ;;
+    status)
+        ;;
+    restart|force-reload)
+        log_daemon_msg "Restarting " "$NAME"
+        ;;
+    run)
+        ;;
+esac
+
+:
+```
+
+Make sure to `sudo chmod +x` it
+and added it to init.d via
+
+```
+sudo update-rc.d pacman_sounds defaults
+```
