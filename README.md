@@ -29,6 +29,12 @@ I used a green led, therefore 180Ω has to be used. (calculate yours with: https
 
 ## On/Off button
 
+```
+dtoverlay=gpio-shutdown
+```
+Is needed otherwise it won't come back and fail with a missing kernel.img
+
+
 shorting pin 5 and 6 will power-up the pi from hibernation. The trick to to put the pi in hibernation (halt command) by using the same pins
 
 It's now built into the rfid-mopidy-go executable using https://github.com/stianeikeland/go-rpio (had to fork a PR to get PI4 fix)
