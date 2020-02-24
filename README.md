@@ -116,3 +116,42 @@ and added it to init.d via
 ```
 sudo update-rc.d pacman_sounds defaults
 ```
+
+## Finding spotify URI's
+
+Search in spotify, right click on any find and shoose share -> copy spotify URI
+
+## Card config
+
+The rfid-mopidy executable looks in /etc/rfid-mopidy/rfid-mopidy.yaml for tracks. It looks like:
+```
+mappings:
+  # met de boys
+  "0001685914": "spotify:playlist:5vuSj9MXB11ZiLulJjx0Ag"
+  # Ernst, Bobby en de rest, de leukste kinderliedes
+  "0": "spotify:album:30Wo9HOMHXB2zCJ6RmOpsV"
+  # Dirk schele, in holland staat een huis
+  "1": "spotify:album:2vrUceCi1EenyC0ZZsXMUR"
+  # Koningsspelen 2019
+  "2": "spotify:playlist:4LNb2mVLbzQ4yrLwEiULgW"
+  # Kinderliedjes NL
+  "3: "spotify:playlist:4Xsg6OEIFvswCzGlYwZqLW"
+  # Hupsakee!
+  "4: "spotify:track:6HlHlXL1wxWFMM6j5pRXyQ"
+  "0001691887": "STOP"
+  "0001698350": "EXIT"
+  "0001700873": "NEXT"
+``` 
+
+Where each index is a card number and the value is a spotify URI or the hardcoded `STOP`, `NEXT` or `EXIT`
+
+## Systemctl
+
+restart to reload playlist
+
+```
+sudo systemctl status rfid-mopidy
+sudo systemctl start rfid-mopidy
+sudo systemctl stop rfid-mopidy
+sudo systemctl restart rfid-mopidy
+```
