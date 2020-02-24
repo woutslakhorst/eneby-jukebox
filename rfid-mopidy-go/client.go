@@ -169,6 +169,9 @@ func (mc MopidyClient) do(req MopidyRequest) (*http.Response, error) {
 	fmt.Println(string(j))
 
 	resp, err := http.Post(mc.RPCAddress, "application/json", reader)
+	if err != nil {
+		return resp, err
+	}
 
 	b, _ := ioutil.ReadAll(resp.Body)
 	mopidyResponse := MopidyResponse{}
