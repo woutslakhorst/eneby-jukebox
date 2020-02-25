@@ -1,0 +1,49 @@
+```
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides:          pacman_sounds
+# Required-Start:    mopidy
+# Required-Stop:
+# Should-Start:      $named
+# Should-Stop:       $named
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Sounds for startup/shutdown
+### END INIT INFO
+
+NAME=pacman_sounds
+SCRIPTNAME=/etc/init.d/$NAME
+
+do_start()
+{
+    aplay /home/pi/pacman_beginning.wav 2>&1 >/dev/null &
+}
+
+do_stop()
+{
+    aplay /home/pi/pacman_death.wav 2>&1 >/dev/null &
+}
+
+# Remove the action from $@ before it is used by the run action
+action=$1
+[ "$action" != "" ] && shift
+
+case "$action" in
+    start)
+        do_start
+        ;;
+    stop)
+        do_stop
+        ;;
+    status)
+        ;;
+    restart|force-reload)
+        log_daemon_msg "Restarting " "$NAME"
+        ;;
+    run)
+        ;;
+esac
+
+:
+```
