@@ -3,7 +3,7 @@
 
 ### BEGIN INIT INFO
 # Provides:          pacman_sounds
-# Required-Start:    mopidy
+# Required-Start:    $all
 # Required-Stop:
 # Should-Start:      $named
 # Should-Stop:       $named
