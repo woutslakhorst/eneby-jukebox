@@ -3,3 +3,4 @@ mappings:
   "0001691887": "STOP"
   "0001698350": "EXIT"
   "0001700873": "NEXT"
+startSound: "/home/pi/pacman_beginning.wav"

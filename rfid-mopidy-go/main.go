@@ -34,39 +34,40 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type Mappings struct {
-	Mappings map[string]string `yaml:Mappings`
+type Config struct {
+	Mappings   map[string]string `yaml:mappings`
+	StartSound string            `yaml:startSound`
 }
 
 func main() {
 	// config options
 	flagSet := pflag.NewFlagSet("config", pflag.ContinueOnError)
-	flagSet.String("mappings_file", "/etc/rfid-mopidy/rfid-mopidy.yaml", "Mopidy-rfid Mappings file")
+	flagSet.String("mappings_file", "/etc/rfid-mopidy/rfid-mopidy.yaml", "Mopidy-rfid Config file")
 	flagSet.String("mopidy_api", "http://localhost:6680", "Mopidy API endpoint")
 	flagSet.Bool("stdin", false, "Read from stdin, use when rfid reader prints Codes as keyboard.")
 
 	if err := flagSet.Parse(os.Args[1:]); err != nil {
 		if err != pflag.ErrHelp {
-			fmt.Printf("error reading args: %w" ,err)
+			fmt.Printf("error reading args: %w", err)
 			os.Exit(1)
 		}
 	}
 
-	// read Mappings file
+	// read Config file
 	fn, _ := flagSet.GetString("mappings_file")
 	data, err := ioutil.ReadFile(fn)
 	if err != nil {
-		fmt.Printf("error reading %s: %s\n" ,fn, err.Error())
+		fmt.Printf("error reading %s: %s\n", fn, err.Error())
 		os.Exit(1)
 	}
 
-	mappings := Mappings{}
+	config := Config{}
 
-	if err := yaml.Unmarshal(data, &mappings); err != nil {
-		log.Fatalf("error reading %s: %s\n" ,fn, err.Error())
+	if err := yaml.Unmarshal(data, &config); err != nil {
+		log.Fatalf("error reading %s: %s\n", fn, err.Error())
 	}
 
-	for k, v := range mappings.Mappings {
+	for k, v := range config.Mappings {
 		fmt.Printf("%s -> %s\n", k, v)
 	}
 
@@ -88,10 +89,14 @@ func main() {
 		RPCAddress: "http://localhost:6680/mopidy/rpc",
 	}
 
+	mopidyClient.waitForOk()
+	mopidyClient.setTracklist(fmt.Sprintf("file:%s", config.StartSound))
+	mopidyClient.play()
+
 	// rfid handler
 	rfid := RFIDReader{
 		Codes:    codes,
-		Mappings: mappings,
+		Mappings: config,
 	}
 	if err := rfid.start(); err != nil {
 		log.Fatal(err)
@@ -107,18 +112,34 @@ func main() {
 					done <- true
 					break
 				case "STOP":
-					if err := mopidyClient.stop(); err != nil { log.Printf("mopidy.stop: %s", err.Error()) }
+					if err := mopidyClient.stop(); err != nil {
+						log.Printf("mopidy.stop: %s", err.Error())
+					}
 				case "NEXT":
-					if err := mopidyClient.next(); err != nil { log.Printf("mopidy.next: %s", err.Error()) }
+					if err := mopidyClient.next(); err != nil {
+						log.Printf("mopidy.next: %s", err.Error())
+					}
 				case "PREV":
-					if err := mopidyClient.previous(); err != nil { log.Printf("mopidy.previous: %s", err.Error()) }
+					if err := mopidyClient.previous(); err != nil {
+						log.Printf("mopidy.previous: %s", err.Error())
+					}
 				default:
 					// stop, clear, add, play
-					if err := mopidyClient.stop(); err != nil { log.Printf("mopidy.stop: %s", err.Error()) }
-					if err := mopidyClient.clearPlaylist(); err != nil { log.Printf("mopidy.clear: %s", err.Error()) }
-					if err := mopidyClient.setTracklist(code); err != nil { log.Printf("mopidy.set: %s", err.Error()) }
-					if err := mopidyClient.shufflePlaylist(); err != nil { log.Printf("mopidy.shuffle: %s", err.Error()) }
-					if err := mopidyClient.play(); err != nil { log.Printf("mopidy.play: %s", err.Error()) }
+					if err := mopidyClient.stop(); err != nil {
+						log.Printf("mopidy.stop: %s", err.Error())
+					}
+					if err := mopidyClient.clearPlaylist(); err != nil {
+						log.Printf("mopidy.clear: %s", err.Error())
+					}
+					if err := mopidyClient.setTracklist(code); err != nil {
+						log.Printf("mopidy.set: %s", err.Error())
+					}
+					if err := mopidyClient.shufflePlaylist(); err != nil {
+						log.Printf("mopidy.shuffle: %s", err.Error())
+					}
+					if err := mopidyClient.play(); err != nil {
+						log.Printf("mopidy.play: %s", err.Error())
+					}
 				}
 			case sig := <-sigs:
 				log.Printf("received signal: %s\n", sig.String())
@@ -127,12 +148,13 @@ func main() {
 		}
 	}()
 
-
 	//block
-	<- done
+	<-done
 
 	// stop playback
-	if err := mopidyClient.stop(); err != nil { fmt.Printf("mopidy.stop: %s", err.Error()) }
+	if err := mopidyClient.quit(); err != nil {
+		fmt.Printf("mopidy.quit: %s", err.Error())
+	}
 
 	os.Exit(0)
 }

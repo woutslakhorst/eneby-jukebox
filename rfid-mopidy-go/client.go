@@ -27,11 +27,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
+	"time"
 )
 
 type MopidyClient struct {
 	RPCAddress string
+	ctrl       chan bool
 }
 
 // clearPlaylist clears the current playlist
@@ -154,6 +157,53 @@ func (mc MopidyClient) previous() error {
 	return err
 }
 
+// get state, used to see if API is up and running
+//{
+//"jsonrpc": "2.0",
+//"id": 1,
+//"method": "core.playback.get_state"
+//}
+func (mc MopidyClient) checkState() error {
+	_, err := mc.do(MopidyRequest{
+		Jsonrpc: "2.0",
+		Id:      1,
+		Method:  "core.playback.get_state",
+	})
+
+	return err
+}
+
+func (mc MopidyClient) quit() error {
+	mc.ctrl <- true
+	return mc.stop()
+}
+
+func (mc MopidyClient) waitForOk() {
+	done := make(chan bool, 1)
+
+	go mc.waitForState(done)
+
+	// wait for OK
+	<-done
+}
+
+func (mc MopidyClient) waitForState(done chan bool) {
+	for {
+		if err := mc.checkState(); err == nil {
+			done <- true
+			break
+		}
+
+		select {
+		case <-mc.ctrl:
+			done <- true
+			break
+		case <-time.After(5 * time.Second):
+			log.Println("waiting for mopidy")
+		}
+	}
+}
+
 type MopidyRequest struct {
 	Jsonrpc string                 `json:"jsonrpc"`
 	Id      int                    `json:"id"`
@@ -189,6 +239,10 @@ func (mc MopidyClient) do(req MopidyRequest) (*http.Response, error) {
 		return resp, err
 	}
 
+	if resp.StatusCode >= 400 {
+		return nil, fmt.Errorf("mopidy returned %d", resp.StatusCode)
+	}
+
 	b, _ := ioutil.ReadAll(resp.Body)
 	mopidyResponse := MopidyResponse{}
 	json.Unmarshal(b, &mopidyResponse)
@@ -198,5 +252,4 @@ func (mc MopidyClient) do(req MopidyRequest) (*http.Response, error) {
 	}
 
 	return resp, err
-	//return http.Post(mc.RPCAddress, "application/json", reader)
 }

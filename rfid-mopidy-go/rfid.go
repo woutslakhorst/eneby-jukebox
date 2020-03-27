@@ -31,7 +31,7 @@ import (
 
 type RFIDReader struct {
 	Codes    chan string
-	Mappings Mappings
+	Mappings Config
 }
 
 func (rfid RFIDReader) start() error {
