@@ -17,7 +17,8 @@ SCRIPTNAME=/etc/init.d/$NAME
 
 do_start()
 {
-    aplay /home/pi/pacman_beginning.wav 2>&1 >/dev/null &
+    # handled by rfid-mopidy
+    # aplay /home/pi/pacman_beginning.wav 2>&1 >/dev/null &
 }
 
 do_stop()
