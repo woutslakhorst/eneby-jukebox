@@ -138,6 +138,22 @@ func (mc MopidyClient) next() error {
 	return err
 }
 
+// previous plays the previous track
+//{
+//"jsonrpc": "2.0",
+//"id": 1,
+//"method": "core.playback.previous"
+//}
+func (mc MopidyClient) previous() error {
+	_, err := mc.do(MopidyRequest{
+		Jsonrpc: "2.0",
+		Id:      1,
+		Method:  "core.playback.previous",
+	})
+
+	return err
+}
+
 type MopidyRequest struct {
 	Jsonrpc string                 `json:"jsonrpc"`
 	Id      int                    `json:"id"`

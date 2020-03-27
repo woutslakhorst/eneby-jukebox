@@ -109,7 +109,9 @@ func main() {
 				case "STOP":
 					if err := mopidyClient.stop(); err != nil { log.Printf("mopidy.stop: %s", err.Error()) }
 				case "NEXT":
-					if err := mopidyClient.next(); err != nil { log.Printf("mopidy.stop: %s", err.Error()) }
+					if err := mopidyClient.next(); err != nil { log.Printf("mopidy.next: %s", err.Error()) }
+				case "PREV":
+					if err := mopidyClient.previous(); err != nil { log.Printf("mopidy.previous: %s", err.Error()) }
 				default:
 					// stop, clear, add, play
 					if err := mopidyClient.stop(); err != nil { log.Printf("mopidy.stop: %s", err.Error()) }
