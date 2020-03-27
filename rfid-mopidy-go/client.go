@@ -29,12 +29,14 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
 type MopidyClient struct {
 	RPCAddress string
-	ctrl       chan bool
 }
 
 // clearPlaylist clears the current playlist
@@ -173,30 +175,18 @@ func (mc MopidyClient) checkState() error {
 	return err
 }
 
-func (mc MopidyClient) quit() error {
-	mc.ctrl <- true
-	return mc.stop()
-}
-
 func (mc MopidyClient) waitForOk() {
-	done := make(chan bool, 1)
+	// register interrupt
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
-	go mc.waitForState(done)
-
-	// wait for OK
-	<-done
-}
-
-func (mc MopidyClient) waitForState(done chan bool) {
 	for {
 		if err := mc.checkState(); err == nil {
-			done <- true
 			break
 		}
 
 		select {
-		case <-mc.ctrl:
-			done <- true
+		case <-sigs:
 			break
 		case <-time.After(5 * time.Second):
 			log.Println("waiting for mopidy")

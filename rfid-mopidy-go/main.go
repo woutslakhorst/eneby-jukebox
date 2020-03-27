@@ -90,6 +90,7 @@ func main() {
 	}
 
 	mopidyClient.waitForOk()
+	mopidyClient.clearPlaylist()
 	mopidyClient.setTracklist(fmt.Sprintf("file:%s", config.StartSound))
 	mopidyClient.play()
 
@@ -152,7 +153,7 @@ func main() {
 	<-done
 
 	// stop playback
-	if err := mopidyClient.quit(); err != nil {
+	if err := mopidyClient.stop(); err != nil {
 		fmt.Printf("mopidy.quit: %s", err.Error())
 	}
 
