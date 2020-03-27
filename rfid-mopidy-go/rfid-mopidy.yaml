@@ -1,6 +1,6 @@
+startsound: "/home/pi/pacman_beginning.wav"
 mappings:
   "0001685914": "spotify:playlist:5vuSj9MXB11ZiLulJjx0Ag"
   "0001691887": "STOP"
   "0001698350": "EXIT"
   "0001700873": "NEXT"
-startSound: "/home/pi/pacman_beginning.wav"

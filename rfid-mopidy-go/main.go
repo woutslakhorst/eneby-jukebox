@@ -36,7 +36,7 @@ import (
 
 type Config struct {
 	Mappings   map[string]string `yaml:mappings`
-	StartSound string            `yaml:startSound`
+	StartSound string            `yaml:startsound`
 }
 
 func main() {
@@ -62,11 +62,11 @@ func main() {
 	}
 
 	config := Config{}
-
 	if err := yaml.Unmarshal(data, &config); err != nil {
 		log.Fatalf("error reading %s: %s\n", fn, err.Error())
 	}
 
+	fmt.Printf("startsound: %s\n", config.StartSound)
 	for k, v := range config.Mappings {
 		fmt.Printf("%s -> %s\n", k, v)
 	}
