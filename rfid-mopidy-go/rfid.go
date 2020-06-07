@@ -23,10 +23,12 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
+	"strconv"
 
-	"github.com/karalabe/hid"
+	"github.com/jacobsa/go-serial/serial"
 )
 
 type RFIDReader struct {
@@ -35,57 +37,41 @@ type RFIDReader struct {
 }
 
 func (rfid RFIDReader) start() error {
-	// Iterate through available Devices, finding all that match a known VID/PID.
-	devs := hid.Enumerate(uint16(0xffff), uint16(0x0035))
+	options := serial.OpenOptions{
+		PortName:        "/dev/ttyS0",
+		BaudRate:        9600,
+		DataBits:        8,
+		StopBits:        1,
+		MinimumReadSize: 14,
+	}
 
-	dev, err := devs[0].Open()
+	// Open the port.
+	port, err := serial.Open(options)
 	if err != nil {
 		return err
 	}
 
 	go func() {
-		// close
-		defer dev.Close()
+		// Make sure to close it later.
+		defer port.Close()
 
-		buf := make([]byte, 3)
+		buf := make([]byte, 14)
 
 		for {
-			total := make([]byte, 0)
-			for j := 0; j < 22; j++ {
-				readBytes, err := dev.Read(buf)
-				if err != nil {
-					log.Fatalf("Read returned an error: %s", err.Error())
-				}
-				if readBytes == 0 {
-					log.Fatalf("HID device returned 0 bytes of data.")
-				}
-				total = append(total, buf...)
+			_, err := port.Read(buf)
+			if err != nil {
+				log.Fatal(err)
 			}
 
-			// put numbers together to 10 chars
-			number := make([]byte, 0)
-			for _, n := range total {
-				if n != 0x0 {
-					switch n {
-					case 30: number = append(number, '1')
-					case 31: number = append(number, '2')
-					case 32: number = append(number, '3')
-					case 33: number = append(number, '4')
-					case 34: number = append(number, '5')
-					case 35: number = append(number, '6')
-					case 36: number = append(number, '7')
-					case 37: number = append(number, '8')
-					case 38: number = append(number, '9')
-					case 39: number = append(number, '0')
-					case 40: //ignore newline
-					}
-				}
+			n, err := parseRFIDBytes(buf)
+			if err != nil {
+				log.Println(err)
+				continue
 			}
+			tagId := fmt.Sprintf("%d", n)
+			fmt.Printf("Scanned: %s\n", tagId)
 
-			// keycodes to ascii
-			fmt.Printf("Scanned: %s\n", string(number))
-
-			urlOrCommand, ok := rfid.Mappings.Mappings[string(number)]
+			urlOrCommand, ok := rfid.Mappings.Mappings[tagId]
 			if ok {
 				fmt.Printf("Found track: %s\n", urlOrCommand)
 				rfid.Codes <- urlOrCommand
@@ -93,17 +79,55 @@ func (rfid RFIDReader) start() error {
 					break
 				}
 			}
-
-			// needed for reset?
-			buf := make([]byte, 3)
-			readBytes, err := dev.Write(buf)
-			if err != nil {
-				log.Fatalf("Write returned an error: %s", err.Error())
-			}
-			if readBytes == 0 {
-				log.Fatalf("HID device received 0 bytes of data.")
-			}
 		}
 	}()
 	return nil
+}
+
+func isHeadByte(s string) bool {
+	return "\x02" == s
+}
+
+func isTailByte(s string) bool {
+	return "\x03" == s
+}
+
+func checksum(cs []byte, d []byte) bool {
+	stepSize := len(cs)
+	current := uint32(0)
+	for i := 0; i < len(d); i += stepSize {
+		db, _ := strconv.ParseUint(string(d[i:i+2]), 16, 32)
+		current = current ^ uint32(db)
+	}
+	n, _ := strconv.ParseUint(string(cs), 16, 32)
+
+	if current != uint32(n) {
+		log.Printf("%d vs %d", uint32(n), current)
+		return false
+	}
+	return true
+}
+
+func parseRFIDBytes(buf []byte) (uint32, error) {
+	if !isHeadByte(string(buf[0])) {
+		return 0, fmt.Errorf("first byte was not 02 but %s\n", string(buf[0]))
+	}
+
+	if !isTailByte(string(buf[13])) {
+		return 0, fmt.Errorf("Last byte was not 03 but %s\n", string(buf[13]))
+	}
+
+	csBuf := buf[11:13]
+	dBuf := buf[1:11]
+
+	if !checksum(csBuf, dBuf) {
+		return 0, errors.New("Checksum failed")
+	}
+
+	s := string(buf[3:11])
+	n, err := strconv.ParseUint(s, 16, 32)
+	if err != nil {
+		return 0, fmt.Errorf("Error parsing %s: %v\n", s, err)
+	}
+	return uint32(n), nil
 }

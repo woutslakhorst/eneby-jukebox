@@ -48,7 +48,7 @@ func main() {
 
 	if err := flagSet.Parse(os.Args[1:]); err != nil {
 		if err != pflag.ErrHelp {
-			fmt.Printf("error reading args: %w", err)
+			fmt.Printf("error reading args: %v", err)
 			os.Exit(1)
 		}
 	}

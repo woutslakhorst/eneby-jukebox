@@ -3,14 +3,13 @@ module github.com/woutslakhorst/eneby-jukebox/rfid-mopidy-go
 go 1.13
 
 require (
-	github.com/google/gousb v0.0.0-20190812193832-18f4c1d8a750
-	github.com/jpoirier/gousb v0.0.0-20160821211425-38255c2cef15 // indirect
-	github.com/karalabe/hid v1.0.0
-	github.com/signal11/hidapi v0.0.0-20160920034012-a6a622ffb680 // indirect
-	github.com/spf13/cobra v0.0.5 // indirect
+	github.com/jacobsa/go-serial v0.0.0-20180131005756-15cf729a72d4
+	github.com/kr/pretty v0.1.0 // indirect
 	github.com/spf13/pflag v1.0.3
-	github.com/spf13/viper v1.6.2 // indirect
+	github.com/stretchr/testify v1.6.1
 	github.com/woutslakhorst/go-rpio v4.2.0+incompatible
+	golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a // indirect
+	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 	gopkg.in/yaml.v2 v2.2.8
 )
 
