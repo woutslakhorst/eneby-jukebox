@@ -23,7 +23,6 @@
 package main
 
 import (
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"log"
@@ -57,18 +56,20 @@ func (rfid RFIDReader) start() error {
 		// Make sure to close it later.
 		defer port.Close()
 
-		buf := make([]byte, 16)
+		buf := make([]byte, 14)
+		dBuf := make([]byte, 28)
 
 		for {
-			r, err := port.Read(buf)
+			_, err := port.Read(buf)
 			if err != nil {
 				log.Fatal(err)
 			}
-			s := hex.Dump(buf[:r])
-			log.Print(s)
-			log.Println("")
 
-			n, err := parseRFIDBytes(buf)
+			// create a double buf because the reading can be partial
+			copy(dBuf[0:14], dBuf[14:])
+			copy(dBuf[14:], buf[:])
+
+			n, err := parseRFIDBytes(dBuf)
 			if err != nil {
 				log.Println(err)
 				continue
@@ -115,26 +116,39 @@ func checksum(cs []byte, d []byte) bool {
 	return true
 }
 
-func parseRFIDBytes(buf []byte) (uint32, error) {
-	if !isHeadByte(string(buf[0])) {
-		return 0, fmt.Errorf("first byte was not 02 but %s\n", string(buf[0]))
+func parseRFIDBytes(doubleBuf []byte) (uint32, error) {
+
+	for i := 0; i < 14; i++ {
+
+		var buf = make([]byte, 14)
+		copy(buf, doubleBuf[i:i+14])
+
+		if !isHeadByte(string(buf[0])) {
+			continue
+			//return 0, fmt.Errorf("first byte was not 02 but %s\n", string(buf[0]))
+		}
+
+		if !isTailByte(string(buf[13])) {
+			continue
+			//return 0, fmt.Errorf("Last byte was not 03 but %s\n", string(buf[13]))
+		}
+
+		csBuf := buf[11:13]
+		dBuf := buf[1:11]
+
+		if !checksum(csBuf, dBuf) {
+			continue
+			//return 0, errors.New("Checksum failed")
+		}
+
+		s := string(buf[3:11])
+		n, err := strconv.ParseUint(s, 16, 32)
+		if err != nil {
+			continue
+			//return 0, fmt.Errorf("Error parsing %s: %v\n", s, err)
+		}
+		return uint32(n), nil
 	}
 
-	if !isTailByte(string(buf[13])) {
-		return 0, fmt.Errorf("Last byte was not 03 but %s\n", string(buf[13]))
-	}
-
-	csBuf := buf[11:13]
-	dBuf := buf[1:11]
-
-	if !checksum(csBuf, dBuf) {
-		return 0, errors.New("Checksum failed")
-	}
-
-	s := string(buf[3:11])
-	n, err := strconv.ParseUint(s, 16, 32)
-	if err != nil {
-		return 0, fmt.Errorf("Error parsing %s: %v\n", s, err)
-	}
-	return uint32(n), nil
+	return 0, errors.New("no card found")
 }
