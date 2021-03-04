@@ -165,14 +165,12 @@ func (mc MopidyClient) previous() error {
 //"id": 1,
 //"method": "core.playback.get_state"
 //}
-func (mc MopidyClient) checkState() error {
-	_, err := mc.do(MopidyRequest{
+func (mc MopidyClient) checkState() (MopidyResponse, error) {
+	return mc.do(MopidyRequest{
 		Jsonrpc: "2.0",
 		Id:      1,
 		Method:  "core.playback.get_state",
 	})
-
-	return err
 }
 
 func (mc MopidyClient) waitForOk() {
@@ -181,7 +179,7 @@ func (mc MopidyClient) waitForOk() {
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
 	for {
-		if err := mc.checkState(); err == nil {
+		if _, err := mc.checkState(); err == nil {
 			break
 		}
 
@@ -191,6 +189,28 @@ func (mc MopidyClient) waitForOk() {
 		case <-time.After(5 * time.Second):
 			log.Println("waiting for mopidy")
 		}
+	}
+}
+
+func (mc MopidyClient) detectIdle(idle chan bool) {
+	lastPlay := time.Now()
+
+	// register interrupt
+	for {
+		s, err := mc.checkState()
+		if err == nil {
+			if s.Result != "stopped" {
+				lastPlay = time.Now()
+			}
+		}
+
+		if lastPlay.Add(20 * time.Minute).After(time.Now()) {
+			idle <- true
+			break
+		}
+
+		// don't do it too often
+		time.Sleep(1 * time.Minute)
 	}
 }
 
@@ -204,7 +224,7 @@ type MopidyRequest struct {
 type MopidyResponse struct {
 	Jsonrpc string      `json:"jsonrpc"`
 	Id      int         `json:"id"`
-	Method  string      `json:"method"`
+	Result  string      `json:"result"`
 	Error   MopidyError `json:"error"`
 }
 
@@ -214,8 +234,9 @@ type MopidyError struct {
 	Data    string `json:"data"`
 }
 
-func (mc MopidyClient) do(req MopidyRequest) (*http.Response, error) {
+func (mc MopidyClient) do(req MopidyRequest) (MopidyResponse, error) {
 	fmt.Printf("%v\n", req)
+	mopidyResponse := MopidyResponse{}
 	j, err := json.Marshal(req)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -226,20 +247,19 @@ func (mc MopidyClient) do(req MopidyRequest) (*http.Response, error) {
 
 	resp, err := http.Post(mc.RPCAddress, "application/json", reader)
 	if err != nil {
-		return resp, err
+		return mopidyResponse, err
 	}
 
 	if resp.StatusCode >= 400 {
-		return nil, fmt.Errorf("mopidy returned %d", resp.StatusCode)
+		return mopidyResponse, fmt.Errorf("mopidy returned %d", resp.StatusCode)
 	}
 
 	b, _ := ioutil.ReadAll(resp.Body)
-	mopidyResponse := MopidyResponse{}
 	json.Unmarshal(b, &mopidyResponse)
 
 	if mopidyResponse.Error.Code != 0 {
 		fmt.Println(string(b))
 	}
 
-	return resp, err
+	return mopidyResponse, err
 }

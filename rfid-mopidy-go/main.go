@@ -27,6 +27,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"os/signal"
 	"syscall"
 
@@ -75,6 +76,7 @@ func main() {
 	sigs := make(chan os.Signal, 1)
 	done := make(chan bool, 1)
 	codes := make(chan string, 1)
+	idle := make(chan bool, 1)
 
 	// register interrupt
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
@@ -93,6 +95,7 @@ func main() {
 	mopidyClient.clearPlaylist()
 	mopidyClient.setTracklist(fmt.Sprintf("file:%s", config.StartSound))
 	mopidyClient.play()
+	mopidyClient.detectIdle(idle)
 
 	// rfid handler
 	rfid := RFIDReader{
@@ -114,36 +117,45 @@ func main() {
 					break
 				case "STOP":
 					if err := mopidyClient.stop(); err != nil {
-						log.Printf("mopidy.stop: %s", err.Error())
+						log.Printf("mopidy.stop: %s\n", err.Error())
 					}
 				case "NEXT":
 					if err := mopidyClient.next(); err != nil {
-						log.Printf("mopidy.next: %s", err.Error())
+						log.Printf("mopidy.next: %s\n", err.Error())
 					}
 				case "PREV":
 					if err := mopidyClient.previous(); err != nil {
-						log.Printf("mopidy.previous: %s", err.Error())
+						log.Printf("mopidy.previous: %s\n", err.Error())
 					}
 				default:
 					// stop, clear, add, play
 					if err := mopidyClient.stop(); err != nil {
-						log.Printf("mopidy.stop: %s", err.Error())
+						log.Printf("mopidy.stop: %s\n", err.Error())
 					}
 					if err := mopidyClient.clearPlaylist(); err != nil {
-						log.Printf("mopidy.clear: %s", err.Error())
+						log.Printf("mopidy.clear: %s\n", err.Error())
 					}
 					if err := mopidyClient.setTracklist(code); err != nil {
-						log.Printf("mopidy.set: %s", err.Error())
+						log.Printf("mopidy.set: %s\n", err.Error())
 					}
 					if err := mopidyClient.shufflePlaylist(); err != nil {
-						log.Printf("mopidy.shuffle: %s", err.Error())
+						log.Printf("mopidy.shuffle: %s\n", err.Error())
 					}
 					if err := mopidyClient.play(); err != nil {
-						log.Printf("mopidy.play: %s", err.Error())
+						log.Printf("mopidy.play: %s\n", err.Error())
 					}
 				}
 			case sig := <-sigs:
 				log.Printf("received signal: %s\n", sig.String())
+				done <- true
+			case _ = <-idle:
+				log.Println("received idle signal")
+				log.Println("sending shutdown signal")
+				cmd := exec.Command("shutdown", "+1")
+				if err = cmd.Run(); err != nil {
+					log.Printf("shutdown error: %s\n", err.Error())
+				}
+
 				done <- true
 			}
 		}
