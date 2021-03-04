@@ -27,6 +27,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"time"
 
 	"github.com/jacobsa/go-serial/serial"
 )
@@ -78,6 +79,8 @@ func (rfid RFIDReader) start() error {
 				if urlOrCommand == "EXIT" {
 					break
 				}
+				// when success, pause for a second
+				time.Sleep(1 * time.Second)
 			}
 		}
 	}()
