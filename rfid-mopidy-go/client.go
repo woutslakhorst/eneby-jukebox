@@ -196,6 +196,10 @@ func (mc MopidyClient) detectIdle(idle chan bool) {
 	lastPlay := time.Now()
 
 	// register interrupt
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
+	// register interrupt
 	for {
 		s, err := mc.checkState()
 		if err == nil {
@@ -204,13 +208,17 @@ func (mc MopidyClient) detectIdle(idle chan bool) {
 			}
 		}
 
-		if lastPlay.Add(20 * time.Minute).After(time.Now()) {
+		if lastPlay.Add(20 * time.Minute).Before(time.Now()) {
 			idle <- true
 			break
 		}
 
-		// don't do it too often
-		time.Sleep(1 * time.Minute)
+		select {
+		case <-sigs:
+			break
+		case <-time.After(1 * time.Minute):
+
+		}
 	}
 }
 
