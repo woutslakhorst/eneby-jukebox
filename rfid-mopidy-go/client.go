@@ -178,18 +178,20 @@ func (mc MopidyClient) waitForOk() {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
-	for {
-		if _, err := mc.checkState(); err == nil {
-			break
-		}
+	go func() {
+		for {
+			if _, err := mc.checkState(); err == nil {
+				break
+			}
 
-		select {
-		case <-sigs:
-			break
-		case <-time.After(5 * time.Second):
-			log.Println("waiting for mopidy")
+			select {
+			case <-sigs:
+				break
+			case <-time.After(5 * time.Second):
+				log.Println("waiting for mopidy")
+			}
 		}
-	}
+	}()
 }
 
 func (mc MopidyClient) detectIdle(idle chan bool) {
