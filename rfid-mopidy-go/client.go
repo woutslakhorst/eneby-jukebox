@@ -178,20 +178,18 @@ func (mc MopidyClient) waitForOk() {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
-	go func() {
-		for {
-			if _, err := mc.checkState(); err == nil {
-				break
-			}
-
-			select {
-			case <-sigs:
-				break
-			case <-time.After(5 * time.Second):
-				log.Println("waiting for mopidy")
-			}
+	for {
+		if _, err := mc.checkState(); err == nil {
+			break
 		}
-	}()
+
+		select {
+		case <-sigs:
+			break
+		case <-time.After(5 * time.Second):
+			log.Println("waiting for mopidy")
+		}
+	}
 }
 
 func (mc MopidyClient) detectIdle(idle chan bool) {
@@ -201,27 +199,28 @@ func (mc MopidyClient) detectIdle(idle chan bool) {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
-	// register interrupt
-	for {
-		s, err := mc.checkState()
-		if err == nil {
-			if s.Result != "stopped" {
-				lastPlay = time.Now()
+	go func() {
+		for {
+			s, err := mc.checkState()
+			if err == nil {
+				if s.Result != "stopped" {
+					lastPlay = time.Now()
+				}
+			}
+
+			if lastPlay.Add(20 * time.Minute).Before(time.Now()) {
+				idle <- true
+				break
+			}
+
+			select {
+			case <-sigs:
+				break
+			case <-time.After(1 * time.Minute):
+
 			}
 		}
-
-		if lastPlay.Add(20 * time.Minute).Before(time.Now()) {
-			idle <- true
-			break
-		}
-
-		select {
-		case <-sigs:
-			break
-		case <-time.After(1 * time.Minute):
-
-		}
-	}
+	}()
 }
 
 type MopidyRequest struct {
