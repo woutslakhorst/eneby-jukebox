@@ -23,6 +23,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"log"
@@ -56,13 +57,16 @@ func (rfid RFIDReader) start() error {
 		// Make sure to close it later.
 		defer port.Close()
 
-		buf := make([]byte, 14)
+		buf := make([]byte, 16)
 
 		for {
-			_, err := port.Read(buf)
+			r, err := port.Read(buf)
 			if err != nil {
 				log.Fatal(err)
 			}
+			s := hex.Dump(buf[:r])
+			log.Print(s)
+			log.Println("")
 
 			n, err := parseRFIDBytes(buf)
 			if err != nil {

@@ -24,23 +24,25 @@ func main() {
     // Make sure to close it later.
     defer port.Close()
 
-        buf := make([]byte, 16)
+	buf := make([]byte, 16)
 
-        for {
-                r, err := port.Read(buf)
-                if err != nil {
-                        log.Fatal(err)
-                }
-                s := hex.Dump(buf[:r])
+	for {
+		r, err := port.Read(buf)
+		if err != nil {
+				log.Fatal(err)
+		}
+		s := hex.Dump(buf[:r])
 		s2 := string(buf[4:11])
-                fmt.Print(s)
+		fmt.Print(s)
 		fmt.Println("")
-	n, err := strconv.ParseUint(s2, 16, 32)
-if err != nil {
-   continue 
-}
-n2 := uint32(n)
-		fmt.Printf("%d",n2)	
+		n, err := strconv.ParseUint(s2, 16, 32)
+
+		if err != nil {
+		   continue
+		}
+
+		n2 := uint32(n)
+		fmt.Printf("%d",n2)
 		fmt.Println("")
-        }
+	}
 }
