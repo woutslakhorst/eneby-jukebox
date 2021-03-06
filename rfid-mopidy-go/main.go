@@ -111,6 +111,11 @@ func main() {
 			select {
 			case code := <-codes:
 				fmt.Printf("received code: %s\n", code)
+				cmd := exec.Command("aplay", "/home/pi/pacman_eatfruit.wav")
+				if err = cmd.Run(); err != nil {
+					log.Printf("play error: %s\n", err.Error())
+				}
+
 				switch code {
 				case "EXIT":
 					done <- true
